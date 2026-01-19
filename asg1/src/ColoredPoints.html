@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Change a point color</title>
+    <style>
+      .emoji {
+        position: absolute;
+        font-size: 30px;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+      }
+    </style>
+  </head>
+
+  <body onload="main()">
+
+    <h1>Assignment 1</h1>
+    <p>Name: Anya Zhang</p>
+    <p>Email: azhang97@ucsc.edu</p>
+    <p>Notes to Grader:</p>
+    <p>1. I added cat emoji stamps so users don't need to draw cats from scratch. Toggle the "Cat Stamp" button to turn the stamp mode on or off.</p>
+    <p>2. I added an "Undo" button to remove the last drawn shape or cat stamp. This works to undo the cat drawing generated from clicking "Draw Cat".</p>
+    <p>3. I improved the RGB sliders to update after the "Red" or "Green" buttons are clicked so the sliders reflect the current color values.</p>
+
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+    <img src="cat_drawing.png" alt="Cat Drawing" width="400" height="400">
+
+    <p>
+    <p id = "numdot"> XXX </p>
+
+    <button type="button" id="green">Green</button>
+    <button type="button" id="red">Red</button>
+    <button type="button" id="clearButton">Clear</button>
+    <button type="button" id="undoButton">Undo</button>
+    <p>
+    <button type="button" id="point">Point</button>
+    <button type="button" id="triangle">Triangle</button>
+    <button type="button" id="circle">Circle</button>
+    <p>
+    <button type="button" id="drawCatButton">Draw Cat</button>
+    <button type="button" id="stamp">Cat Stamp: OFF</button>
+    <p>
+
+    <p>
+      Red <input type="range" min="0" max="100" value="100" class="slider" id="redSlider">
+    <p>
+      Green <input type="range" min="0" max="100" value="100" class="slider" id="greenSlider">
+    <p>
+      Blue <input type="range" min="0" max="100" value="100" class="slider" id="blueSlider">
+    
+    <p>
+      Size <input type="range" min="5" max="40" value="5" class="slider" id="sizeSlider">
+    <p>
+      Segments in Circle <input type="range" min="5" max="40" value="5" class="slider" id="segmentSlider">
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="Point.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Circle.js"></script>
+    <script src="ColoredPoints.js"></script>
+  </body>
+</html>
