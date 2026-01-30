@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Change a point color</title>
+    <style>
+      .emoji {
+        position: absolute;
+        font-size: 30px;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+      }
+    </style>
+  </head>
+
+  <body onload="main()">
+
+    <h1>Assignment 2</h1>
+    <p>Name: Anya Zhang</p>
+    <p>Email: azhang97@ucsc.edu</p>
+    <p>Notes to Grader: I used Gemini for assistance with the feather animation logic.</p>
+
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+    <p>
+    <p id = "numdot"> XXX </p>
+
+    <!-- <button type="button" id="green">Green</button>
+    <button type="button" id="red">Red</button>
+    <button type="button" id="clearButton">Clear</button>
+    <p>
+    <button type="button" id="point">Point</button>
+    <button type="button" id="triangle">Triangle</button>
+    <button type="button" id="circle">Circle</button>
+    <p> -->
+
+    <!-- <p>
+      Red <input type="range" min="0" max="100" value="100" class="slider" id="redSlider">
+    <p>
+      Green <input type="range" min="0" max="100" value="100" class="slider" id="greenSlider">
+    <p>
+      Blue <input type="range" min="0" max="100" value="100" class="slider" id="blueSlider">
+     -->
+    Animation:
+    <button type="button" id="animationOnButton">On</button>
+    <button type="button" id="animationOffButton">Off</button>
+
+    <p>
+      Camera Angle <input type="range" min="0" max="360" value="0" class="slider" id="angleSlider">
+    <p>
+      Left Thigh Angle <input type="range" min="-45" max="45" value="0" class="slider" id="leftThighSlider">
+    <p>
+      Right Thigh Angle <input type="range" min="-45" max="45" value="0" class="slider" id="rightThighSlider">
+    <p>
+      Left Calf Angle <input type="range" min="-45" max="45" value="0" class="slider" id="leftCalfSlider">
+    <p>
+      Right Calf Angle <input type="range" min="-45" max="45" value="0" class="slider" id="rightCalfSlider">
+    <p>
+      Left Foot Angle <input type="range" min="-45" max="45" value="0" class="slider" id="leftFootSlider">
+    <p>
+      Right Foot Angle <input type="range" min="-45" max="45" value="0" class="slider" id="rightFootSlider">
+    <p>
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix-cse160.js"></script>
+    <script src="Point.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Circle.js"></script>
+    <script src="Cube.js"></script>
+    <script src="TriangularPrism.js"></script>
+    <script src="asg2.js"></script>
+  </body>
+</html>
