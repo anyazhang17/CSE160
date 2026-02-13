@@ -21,6 +21,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler0;
   uniform sampler2D u_Sampler1;
   uniform sampler2D u_Sampler2;
+  uniform sampler2D u_Sampler3;
   uniform int u_whichTexture;
   void main() {
     if (u_whichTexture == -2) {
@@ -38,6 +39,9 @@ var FSHADER_SOURCE = `
     else if (u_whichTexture == 2) {
       gl_FragColor = texture2D(u_Sampler2, v_UV);     // Use texture2, leaves.png
     }
+    else if (u_whichTexture == 3) {
+      gl_FragColor = texture2D(u_Sampler3, v_UV);     // Use texture3, dirt.jpg
+    }
     else {
       gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0);        // Use error, red color
     }
@@ -54,6 +58,7 @@ let u_GlobalRotateMatrix;
 let u_Sampler0;
 let u_Sampler1;
 let u_Sampler2;
+let u_Sampler3;
 let u_whichTexture;
 let u_ViewMatrix;
 let u_ProjectionMatrix
@@ -141,10 +146,17 @@ function connectVariablesToGLSL() {
     return;
   }
 
-    // Get the storage location of u_Sampler2
+  // Get the storage location of u_Sampler2
   u_Sampler2 = gl.getUniformLocation(gl.program, 'u_Sampler2');
   if (!u_Sampler2) {
     console.log('Failed to get the storage location of u_Sampler2');
+    return;
+  }
+
+  // Get the storage location of u_Sampler3
+  u_Sampler3 = gl.getUniformLocation(gl.program, 'u_Sampler3');
+  if (!u_Sampler3) {
+    console.log('Failed to get the storage location of u_Sampler3');
     return;
   }
 
@@ -223,6 +235,14 @@ function initTextures() {
   }
   leavesImage.onload = function(){ sendImageToTexture(leavesImage, 2, u_Sampler2); };
   leavesImage.src = 'leaves.png';
+
+  var dirtImage = new Image();
+  if (!dirtImage) {
+    console.log('Failed to create the feather image object');
+    return false;
+  }
+  dirtImage.onload = function(){ sendImageToTexture(dirtImage, 3, u_Sampler3); };
+  dirtImage.src = 'dirt.jpg';
   return true;
 }
 
@@ -244,7 +264,7 @@ function sendImageToTexture(image, textureUnit, u_Sampler) {
   // Set the texture image
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
   
-  // Set the texture unit 0 to the sampler
+  // Set the texture to the sampler
   gl.uniform1i(u_Sampler, textureUnit);
   
   console.log("Finished loading texture into unit " + textureUnit);
@@ -254,6 +274,10 @@ function main() {
   setupWebGL();
   connectVariablesToGLSL();
   addActionsForHtmlUI();
+
+  canvas.onclick = function() {
+    canvas.requestPointerLock();
+  };
 
   canvas.onmousedown = function(ev) {
     if (ev.shiftKey) {
@@ -269,28 +293,39 @@ function main() {
   };
 
   // Dragging mouse
-  canvas.onmousemove = function(ev) {
-    if (!g_mouseDown) return;
+  // canvas.onmousemove = function(ev) {
+  //   if (!g_mouseDown) return;
 
-    let dx = ev.clientX - g_mouseX;
-    // let dy = ev.clientY - g_mouseY;
+  //   let dx = ev.clientX - g_mouseX;
+  //   // let dy = ev.clientY - g_mouseY;
 
-    // g_globalAngleY += dx * 0.5;
-    // g_globalAngleX += dy * 0.5;
+  //   // g_globalAngleY += dx * 0.5;
+  //   // g_globalAngleX += dy * 0.5;
 
 
-    if (dx > 0) {
-      g_camera.panLeft(Math.abs(dx)*0.2);
+  //   if (dx > 0) {
+  //     g_camera.panLeft(Math.abs(dx)*0.2);
 
-    } else if (dx < 0) {
-      g_camera.panRight(Math.abs(dx)*0.2);
+  //   } else if (dx < 0) {
+  //     g_camera.panRight(Math.abs(dx)*0.2);
+  //   }
+
+  //   g_mouseX = ev.clientX;
+  //   g_mouseY = ev.clientY;
+
+  //   renderScene();
+  // };
+
+  document.addEventListener('mousemove', function(ev) {
+    if (document.pointerLockElement === canvas) {
+      let dx = ev.movementX;
+      let dy = ev.movementY;
+      if (dx !== 0) {
+        g_camera.panLeft(-dx * 0.15); 
+      }
+      renderScene();
     }
-
-    g_mouseX = ev.clientX;
-    g_mouseY = ev.clientY;
-
-    renderScene();
-  };
+  }, false);
 
   document.onkeydown = keydown;
 
@@ -385,26 +420,26 @@ function keydown(ev) {
 }
 
 var g_map = [
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10],
+[1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 10],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 10],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 10],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+[1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9],
+[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 3, 4, 4, 5, 6, 7, 8, 9],
+[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 6, 7, 8],
+[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 7],
+[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 2, 3, 3, 4, 5, 6, 7],
+[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 4, 5, 6, 6],
+[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 3, 4, 4, 5],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4],
+[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 4],
+[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
 [1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -425,7 +460,12 @@ function drawMap() {
       let height = g_map[x][y];
       for (let h = 0; h < height; h++) {
         let wall = new Cube();
-        wall.textureNum = 2;
+        if (y > 19) {
+          wall.textureNum = 3;
+        }
+        else {
+          wall.textureNum = 2;
+        }
         wall.matrix.translate(x - 16, -0.93 + h, y - 16);
         wall.render();
       }
@@ -501,7 +541,7 @@ function renderScene() {
   sky.color = [0.1, 0.4, 1.0, 1.0];
   sky.textureNum = 0;
   sky.matrix.translate(0.0, -0.931, 0.0);
-  sky.matrix.scale(100, 100, 100);
+  sky.matrix.scale(100, 60, 100);
   sky.matrix.translate(-0.5, 0.0, -0.5);
   sky.render();
 
