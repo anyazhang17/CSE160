@@ -34,7 +34,7 @@ class Camera {
     for (let p of surroundingSides) {
       let mapX = Math.floor(p.x + 16);
       let mapZ = Math.floor(p.z + 16);
-      if (this.g_map[mapX][mapZ] > 0) {
+      if (this.g_map[mapX][mapZ] > 0 || mapX < 0 || mapX >= 32 || mapZ < 0 || mapZ >= 32) {
         return false;
       }
     }
