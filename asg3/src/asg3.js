@@ -19,6 +19,8 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   uniform vec4 u_FragColor;
   uniform sampler2D u_Sampler0;
+  uniform sampler2D u_Sampler1;
+  uniform sampler2D u_Sampler2;
   uniform int u_whichTexture;
   void main() {
     if (u_whichTexture == -2) {
@@ -28,7 +30,13 @@ var FSHADER_SOURCE = `
       gl_FragColor = vec4(v_UV, 1.0, 1.0);            // Use UV debug color
     }
     else if (u_whichTexture == 0) {
-      gl_FragColor = texture2D(u_Sampler0, v_UV);     // Use texture0
+      gl_FragColor = texture2D(u_Sampler0, v_UV);     // Use texture0, sky.jpg
+    }
+    else if (u_whichTexture == 1) {
+      gl_FragColor = texture2D(u_Sampler1, v_UV);     // Use texture1, feather.webp
+    }
+    else if (u_whichTexture == 2) {
+      gl_FragColor = texture2D(u_Sampler2, v_UV);     // Use texture2, leaves.png
     }
     else {
       gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0);        // Use error, red color
@@ -44,6 +52,8 @@ let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
+let u_Sampler1;
+let u_Sampler2;
 let u_whichTexture;
 let u_ViewMatrix;
 let u_ProjectionMatrix
@@ -124,6 +134,20 @@ function connectVariablesToGLSL() {
     return;
   }
 
+  // Get the storage location of u_Sampler1
+  u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
+  if (!u_Sampler1) {
+    console.log('Failed to get the storage location of u_Sampler1');
+    return;
+  }
+
+    // Get the storage location of u_Sampler2
+  u_Sampler2 = gl.getUniformLocation(gl.program, 'u_Sampler2');
+  if (!u_Sampler2) {
+    console.log('Failed to get the storage location of u_Sampler2');
+    return;
+  }
+
   // Get the storage location of u_whichTexture
   u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
   if (!u_whichTexture) {
@@ -173,21 +197,36 @@ function addActionsForHtmlUI() {
   document.getElementById('rightFootSlider').addEventListener('mousemove', function() {g_rightFootAngle = this.value; renderScene();});
 }
 
-function initTextures(gl, n) {
-  var image = new Image();  // Create the image object
-  if (!image) {
-    console.log('Failed to create the image object');
+function initTextures() {
+  var skyImage = new Image();  // Create the image object
+  if (!skyImage) {
+    console.log('Failed to create the sky image object');
     return false;
   }
   // Register the event handler to be called on loading an image
-  image.onload = function(){ sendImageToTEXTURE0(image); };
+  skyImage.onload = function(){ sendImageToTexture(skyImage, 0, u_Sampler0); };
   // Tell the browser to load an image
-  image.src = 'sky.jpg';
+  skyImage.src = 'sky.jpg';
 
+  var featherImage = new Image();
+  if (!featherImage) {
+    console.log('Failed to create the feather image object');
+    return false;
+  }
+  featherImage.onload = function(){ sendImageToTexture(featherImage, 1, u_Sampler1); };
+  featherImage.src = 'feather.webp';
+
+  var leavesImage = new Image();
+  if (!leavesImage) {
+    console.log('Failed to create the feather image object');
+    return false;
+  }
+  leavesImage.onload = function(){ sendImageToTexture(leavesImage, 2, u_Sampler2); };
+  leavesImage.src = 'leaves.png';
   return true;
 }
 
-function sendImageToTEXTURE0(image) {
+function sendImageToTexture(image, textureUnit, u_Sampler) {
   var texture = gl.createTexture();   // Create a texture object
   if (!texture) {
     console.log('Failed to create the texture object');
@@ -195,8 +234,8 @@ function sendImageToTEXTURE0(image) {
   }
 
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
-  // Enable texture unit0
-  gl.activeTexture(gl.TEXTURE0);
+  // Enable texture unit
+  gl.activeTexture(gl.TEXTURE0 + textureUnit);
   // Bind the texture object to the target
   gl.bindTexture(gl.TEXTURE_2D, texture);
 
@@ -206,9 +245,9 @@ function sendImageToTEXTURE0(image) {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
   
   // Set the texture unit 0 to the sampler
-  gl.uniform1i(u_Sampler0, 0);
+  gl.uniform1i(u_Sampler, textureUnit);
   
-  console.log("Finished loadTexture");
+  console.log("Finished loading texture into unit " + textureUnit);
 }
 
 function main() {
@@ -216,7 +255,6 @@ function main() {
   connectVariablesToGLSL();
   addActionsForHtmlUI();
 
-  // canvas.onmousedown = click;
   canvas.onmousedown = function(ev) {
     if (ev.shiftKey) {
       g_pokeAnimation = !g_pokeAnimation;
@@ -235,10 +273,18 @@ function main() {
     if (!g_mouseDown) return;
 
     let dx = ev.clientX - g_mouseX;
-    let dy = ev.clientY - g_mouseY;
+    // let dy = ev.clientY - g_mouseY;
 
-    g_globalAngleY += dx * 0.5;
-    g_globalAngleX += dy * 0.5;
+    // g_globalAngleY += dx * 0.5;
+    // g_globalAngleX += dy * 0.5;
+
+
+    if (dx > 0) {
+      g_camera.panLeft(Math.abs(dx)*0.2);
+
+    } else if (dx < 0) {
+      g_camera.panRight(Math.abs(dx)*0.2);
+    }
 
     g_mouseX = ev.clientX;
     g_mouseY = ev.clientY;
@@ -248,9 +294,9 @@ function main() {
 
   document.onkeydown = keydown;
 
-  g_camera = new Camera(canvas.width, canvas.height);
+  g_camera = new Camera(canvas.width, canvas.height, g_map);
 
-  initTextures(gl, 0);
+  initTextures(gl);
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -309,21 +355,107 @@ function updateAnimationAngles() {
 var g_camera;
 
 function keydown(ev) {
-  if (ev.keyCode == 87) {         // W
-    g_camera.moveForward();
-  } else if (ev.keyCode == 83) {  // S
-    g_camera.moveBackwards();
-  } else if (ev.keyCode == 65) {  // A
-    g_camera.moveLeft();
-  } else if (ev.keyCode == 68) {  // D
-    g_camera.moveRight();
-  } else if (ev.keyCode == 81) {  // Q
+  let isSprinting = ev.shiftKey;
+  if (ev.keyCode == 87) {  // W
+    g_camera.moveForward(isSprinting);
+  } 
+  else if (ev.keyCode == 83) {  // S
+    g_camera.moveBackwards(isSprinting);
+  } 
+  else if (ev.keyCode == 65) {  // A
+    g_camera.moveLeft(isSprinting);
+  } 
+  else if (ev.keyCode == 68) {  // D
+    g_camera.moveRight(isSprinting);
+  } 
+  else if (ev.keyCode == 81) {  // Q
     g_camera.panLeft();
-  } else if (ev.keyCode == 69) {  // E
+  } 
+  else if (ev.keyCode == 69) {  // E
     g_camera.panRight();
+  }
+  else if (ev.keyCode == 90) {  // Z
+    modifyMap(true);
+  } 
+  else if (ev.keyCode == 88) { // X 
+    modifyMap(false);
   }
   renderScene();
   console.log("Key pressed: " + ev.keyCode);
+}
+
+var g_map = [
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+function drawMap() {
+  for (let x = 0; x < 32; x++) {
+    for (let y = 0; y < 32; y++) {
+      let height = g_map[x][y];
+      for (let h = 0; h < height; h++) {
+        let wall = new Cube();
+        wall.textureNum = 2;
+        wall.matrix.translate(x - 16, -0.93 + h, y - 16);
+        wall.render();
+      }
+    }
+  }
+}
+
+function modifyMap(isAddingBlock) {
+  let forward = new Vector3();
+  forward.set(g_camera.at);
+  forward.sub(g_camera.eye);
+  forward.normalize();
+
+  let targetX = g_camera.eye.elements[0] + forward.elements[0]*2;
+  let targetZ = g_camera.eye.elements[2] + forward.elements[2]*2;
+
+  let mapX = Math.floor(targetX + 16);
+  let mapZ = Math.floor(targetZ + 16);
+
+  if (mapX >= 0 && mapX < 32 && mapZ >= 0 && mapZ < 32) {
+    if (isAddingBlock) {
+      g_map[mapX][mapZ] += 1;
+    } 
+    // Removing a block
+    else {
+      if (g_map[mapX][mapZ] > 0) {
+        g_map[mapX][mapZ] -= 1;
+      }
+    }
+  }
 }
 
 // Draw everything
@@ -353,8 +485,29 @@ function renderScene() {
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  drawMap();
+
+  // Draw ground
+  var ground = new Cube();
+  ground.color = [0.0, 0.7, 0.0, 1.0];
+  ground.textureNum = -2;
+  ground.matrix.translate(0.0, -0.93, 0.0);
+  ground.matrix.scale(100, 0, 100);
+  ground.matrix.translate(-0.5, 0.0, -0.5);
+  ground.render();
+
+  // Draw sky box
+  var sky = new Cube();
+  sky.color = [0.1, 0.4, 1.0, 1.0];
+  sky.textureNum = 0;
+  sky.matrix.translate(0.0, -0.931, 0.0);
+  sky.matrix.scale(100, 100, 100);
+  sky.matrix.translate(-0.5, 0.0, -0.5);
+  sky.render();
+
   // Draw 
   var body = new Cube([0.0, 0.4, 0.5, 1.0]);
+  body.textureNum = -2;
   body.matrix.translate(-0.75, -0.5, -0.25);
   body.matrix.rotate(g_bodyAngle-5, 0, 0, 1);
   body.matrix.rotate(g_bodyLRAngle, 0, 1, 0);
@@ -366,6 +519,7 @@ function renderScene() {
   for (var i = 0; i < numFeathers; i++) {
     var feather = new Cube([0.3, 0.9, 0.1, 1.0]);
     feather.matrix = new Matrix4(bodyMatrix);
+    feather.textureNum = 1;
     feather.matrix.translate(0.8, 0.3, 0.25); 
     // Tilt from ground-facing to upright
     feather.matrix.rotate(g_featherLift, 0, 0, 1);
@@ -378,6 +532,7 @@ function renderScene() {
   }
 
   var neck = new Cube([0.0, 0.3, 0.9, 1.0]);
+  neck.textureNum = -2;
   neck.matrix = bodyMatrix;
   neck.matrix.translate(0.1, 0.5, 0.175);
   neck.matrix.rotate(-15-g_neckAngle, 0, 0, 1);
@@ -386,6 +541,7 @@ function renderScene() {
   neck.render();
 
   var head = new Cube([0.0, 0.5, 1.0, 1.0]);
+  head.textureNum = -2;
   head.matrix = neckMatrix;
   head.matrix.translate(-0.125, 0.4, -0.075);
   head.matrix.rotate(20, 0, 0, 1);
@@ -394,18 +550,21 @@ function renderScene() {
   head.render();
 
   var leftEye = new Cube([0.0, 0.0, 0.0, 1.0]);
+  leftEye.textureNum = -2;
   leftEye.matrix = new Matrix4(headMatrix);
   leftEye.matrix.translate(0.05, 0.15, -0.01);
   leftEye.matrix.scale(0.05, 0.05, 0.05);
   leftEye.render();
 
   var rightEye = new Cube([0.0, 0.0, 0.0, 1.0]);
+  rightEye.textureNum = -2;
   rightEye.matrix = new Matrix4(headMatrix);
   rightEye.matrix.translate(0.05, 0.15, 0.261);
   rightEye.matrix.scale(0.05, 0.05, 0.05);
   rightEye.render();
 
   var beak = new TriangularPrism();
+  beak.textureNum = -2;
   beak.color = [1.0, 0.9, 0.6, 1.0];
   beak.matrix = headMatrix;
   beak.matrix.translate(-0.15, 0.01, 0.05);
@@ -413,7 +572,8 @@ function renderScene() {
   beak.render();
 
   var leftThigh = new Cube([0.7, 0.65, 0.5, 1.0]);
-  leftThigh.matrix = new Matrix4(bodyMatrix);
+  leftThigh.textureNum = -2;
+  leftThigh.matrix = bodyMatrix;
   leftThigh.matrix.setTranslate(-0.3, -0.5, -0.2);
   leftThigh.matrix.rotate(g_leftThighAngle-180, 0, 0, 1);
   var leftThighMatrix = new Matrix4(leftThigh.matrix);
@@ -421,6 +581,7 @@ function renderScene() {
   leftThigh.render();
 
   var leftCalf = new Cube([0.7, 0.65, 0.5, 1.0]);
+  leftCalf.textureNum = -2;
   leftCalf.matrix = leftThighMatrix;
   leftCalf.matrix.translate(0.01, 0.15, 0.01);
   leftCalf.matrix.rotate(g_leftCalfAngle, 0, 0, 1);
@@ -429,6 +590,7 @@ function renderScene() {
   leftCalf.render();
 
   var leftFoot = new Cube([0.7, 0.65, 0.5, 1.0]);
+  leftFoot.textureNum = -2;
   leftFoot.matrix = new Matrix4(leftCalfMatrix);
   leftFoot.matrix.translate(-0.03, 0.25, 0.0);
   leftFoot.matrix.rotate(g_leftFootAngle, 0, 0, 1);
@@ -436,6 +598,7 @@ function renderScene() {
   leftFoot.render();
 
   var rightThigh = new Cube([0.8, 0.75, 0.6, 1.0]);
+  rightThigh.textureNum = -2;
   rightThigh.matrix = new Matrix4(bodyMatrix);
   rightThigh.matrix.setTranslate(-0.3, -0.5, 0.13);
   rightThigh.matrix.rotate(g_rightThighAngle-180, 0, 0, 1);
@@ -444,6 +607,7 @@ function renderScene() {
   rightThigh.render();
 
   var rightCalf = new Cube([0.8, 0.75, 0.6, 1.0]);
+  rightCalf.textureNum = -2;
   rightCalf.matrix = rightThighMatrix;
   rightCalf.matrix.translate(0.01, 0.15, 0.01);
   rightCalf.matrix.rotate(g_rightCalfAngle, 0, 0, 1);
@@ -452,6 +616,7 @@ function renderScene() {
   rightCalf.render();
 
   var rightFoot = new Cube([0.8, 0.75, 0.6, 1.0]);
+  rightFoot.textureNum = -2;
   rightFoot.matrix = new Matrix4(rightCalfMatrix);
   rightFoot.matrix.translate(-0.03, 0.25, 0.0);
   rightFoot.matrix.rotate(g_rightFootAngle, 0, 0, 1);

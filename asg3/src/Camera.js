@@ -1,8 +1,9 @@
 class Camera {
-  constructor(width, height) {
+  constructor(width, height, g_map) {
     this.type='camera';
     this.width = width;
     this.height = height;
+    this.g_map = g_map;
     this.fov = 60;
     this.eye = new Vector3([0,0,3]);
     this.at = new Vector3([0,0,-100]);
@@ -13,33 +14,69 @@ class Camera {
   }
 
   updateMatrices() {
-    this.projMatrix.setPerspective(this.fov, this.width/this.height, 1, 100);
+    this.projMatrix.setPerspective(this.fov, this.width/this.height, 0.1, 100);
     this.viewMatrix.setLookAt(this.eye.elements[0], this.eye.elements[1], this.eye.elements[2],   this.at.elements[0], this.at.elements[1], this.at.elements[2],   this.up.elements[0], this.up.elements[1], this.up.elements[2]);
   }
 
-  moveForward(speed = 0.1) {
+  canWalkTo(x, z) {
+    let radius = 0.3;
+    let surroundingSides = [
+      {x: x, z: z},
+      {x: x + radius, z: z},
+      {x: x - radius, z: z},
+      {x: x, z: z + radius},
+      {x: x, z: z - radius},
+      {x: x + radius, z: z - radius},
+      {x: x - radius, z: z - radius},
+      {x: x + radius, z: z + radius},
+      {x: x - radius, z: z + radius}
+    ];
+    for (let p of surroundingSides) {
+      let mapX = Math.floor(p.x + 16);
+      let mapZ = Math.floor(p.z + 16);
+      if (this.g_map[mapX][mapZ] > 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  moveForward(isSprinting = false) {
+    let speed = isSprinting ? 1.0 : 0.3;
     var f = new Vector3();
     f.set(this.at);
     f.sub(this.eye);
     f.normalize();
     f.mul(speed);
-    this.eye.add(f);
-    this.at.add(f);
-    this.updateMatrices();
+
+    let newX = this.eye.elements[0] + f.elements[0];
+    let newZ = this.eye.elements[2] + f.elements[2];
+    if (this.canWalkTo(newX, newZ)) {
+      this.eye.add(f);
+      this.at.add(f);
+      this.updateMatrices();
+    }
   }
 
-  moveBackwards(speed = 0.1) {
+  moveBackwards(isSprinting = false) {
+    let speed = isSprinting ? 1.0 : 0.3;
     var b = new Vector3();
     b.set(this.eye);
     b.sub(this.at);
     b.normalize();
     b.mul(speed);
-    this.eye.add(b);
-    this.at.add(b);
-    this.updateMatrices();
+
+    let newX = this.eye.elements[0] + b.elements[0];
+    let newZ = this.eye.elements[2] + b.elements[2];
+    if (this.canWalkTo(newX, newZ)) {
+      this.eye.add(b);
+      this.at.add(b);
+      this.updateMatrices();
+    }
   }
 
-  moveLeft(speed = 0.1) {
+  moveLeft(isSprinting = false) {
+    let speed = isSprinting ? 1.0 : 0.3;
     var f = new Vector3();
     f.set(this.at);
     f.sub(this.eye);
@@ -47,12 +84,18 @@ class Camera {
     var s = Vector3.cross(this.up, f);
     s.normalize();
     s.mul(speed);
-    this.eye.add(s);
-    this.at.add(s);
-    this.updateMatrices();
+
+    let newX = this.eye.elements[0] + s.elements[0];
+    let newZ = this.eye.elements[2] + s.elements[2];
+    if (this.canWalkTo(newX, newZ)) {
+      this.eye.add(s);
+      this.at.add(s);
+      this.updateMatrices();
+    }
   }
 
-  moveRight(speed = 0.1) {
+  moveRight(isSprinting = false) {
+    let speed = isSprinting ? 1.0 : 0.3;
     var f = new Vector3();
     f.set(this.at);
     f.sub(this.eye);
@@ -60,12 +103,17 @@ class Camera {
     var s = Vector3.cross(f, this.up);
     s.normalize();
     s.mul(speed);
-    this.eye.add(s);
-    this.at.add(s);
-    this.updateMatrices();
+
+    let newX = this.eye.elements[0] + s.elements[0];
+    let newZ = this.eye.elements[2] + s.elements[2];
+    if (this.canWalkTo(newX, newZ)) {
+      this.eye.add(s);
+      this.at.add(s);
+      this.updateMatrices();
+    }
   }
 
-  panLeft(alpha = 5) {
+  panLeft(alpha = 7) {
     var f = new Vector3();
     f.set(this.at);
     f.sub(this.eye);
@@ -79,7 +127,7 @@ class Camera {
     this.updateMatrices();
   }
 
-  panRight(alpha = 5) {
+  panRight(alpha = 7) {
     var f = new Vector3();
     f.set(this.at);
     f.sub(this.eye);
