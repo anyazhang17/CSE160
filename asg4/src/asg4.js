@@ -775,6 +775,9 @@ function renderScene() {
     if (g_normalOn) {
       g_customModel.textureNum = -3;
     }
+    else {
+      g_customModel.textureNum = -2;
+    }
     g_customModel.matrix.setScale(0.5, 0.5, 0.5);
     g_customModel.matrix.translate(-5.0, 0, -5.0);
     g_customModel.render();

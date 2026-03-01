@@ -2,7 +2,7 @@
 class Model {
     constructor(gl, filePath) {
         this.filePath = filePath;
-        this.color = [1.0, 1.0, 1.0, 1.0];
+        this.color = [1.0, 0.7, 1.0, 1.0];
         this.matrix = new Matrix4();
         this.isFullyLoaded = false;
         this.textureNum = -2;
