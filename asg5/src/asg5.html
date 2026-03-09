@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Assignment 5</title>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/"
+      }
+    }
+    </script>
+  </head>
+
+  <body>
+    <h1>Assignment 5</h1>
+    <p>Name: Anya Zhang</p>
+    <p>Email: azhang97@ucsc.edu</p>
+    <p>Notes to Grader: I used ambient, directional, and point lights. The 20 3D shapes include 15 yarn balls (textured, animatedspheres), 3 cylinders (cat tree pillar, cat bowl, and water inside bowl), and 2 cones (cat tree platforms), and 2 rectangular prisms (cat tree platforms).
+      I used Gemini to for the extra feature (animated butterflies).</p>
+
+    <canvas id="c" width="800" height="400">
+    </canvas>
+   
+    <script type="module">
+    import * as THREE from 'three';
+    </script>
+
+    <script type="module" src="asg5.js"></script>
+  </body>
+</html>
